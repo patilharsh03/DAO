@@ -81,7 +81,7 @@ export default function Home() {
     }
   }
 
-  const fetchProposalById = async () => {
+  const fetchProposalById = async (id ) => {
     try {
       const provider = await getProviderOrSigner();
       const daoContract = getDaoContractInstance(provider);
@@ -114,7 +114,7 @@ export default function Home() {
     }
   }
 
-  const voteOnProposal = async () => {
+  const voteOnProposal = async (proposalId, _vote) => {
     try {
       const signer = await getProviderOrSigner(true);
       const daoContract = getDaoContractInstance(signer);
@@ -146,7 +146,7 @@ export default function Home() {
     }
   }
 
-  const getProviderOrSigner = async () => {
+  const getProviderOrSigner = async (needSigner = false) => {
     const provider = await web3ModalRef.current.connect();
     const web3Provider = new providers.Web3Provider(provider);
 
@@ -226,9 +226,123 @@ export default function Home() {
         );
     } else {
         return (
-          
-        )
+          <div className={styles.container}>
+            <label>Fake NFT Token ID to Purchase: </label>
+            <input 
+              placeholder='0'
+              type="number"
+              onChange={(e) => setFakeNftTokenId(e.target.value)}
+            />
+            <button className={styles.button2} onClick={createProposal}>
+              Create
+            </button>
+          </div>
+        );
     }
   }
 
+  function renderViewProposalsTab() {
+    if (loading) {
+      return (
+        <div className={styles.description}>
+          Loading... Waiting for transaction...
+        </div>
+      );
+    } else if (proposals.length === 0) {
+      return (
+        <div className={styles.description}>
+          No Proposals have been created
+        </div>
+      );
+    } else {
+        return (
+          <div>
+          {proposals.map((p, index) => (
+            <div key={index} className={styles.proposalCard}>
+              <p>Proposal ID: {p.proposalId}</p>
+              <p>Fake NFT to Purchase: {p.nftTokenId}</p>
+              <p>Deadline: {p.deadline.toLocaleString()}</p>
+              <p>Yay Votes: {p.yayVotes}</p>
+              <p>Nay Votes: {p.nayVotes}</p>
+              <p>Executed?: {p.executed.toString()}</p>
+              {p.deadline.getTime() > Date.now() && !p.executed ? (
+                <div className={styles.flex}>
+                  <button
+                    className={styles.button2}
+                    onClick={() => voteOnProposal(p.proposalId, "YAY")}
+                  >
+                    Vote YAY
+                  </button>
+                  <button
+                    className={styles.button2}
+                    onClick={() => voteOnProposal(p.proposalId, "NAY")}
+                  >
+                    Vote NAY
+                  </button>
+                </div>
+              ) : p.deadline.getTime() < Date.now() && !p.executed ? (
+                <div className={styles.flex}>
+                  <button
+                    className={styles.button2}
+                    onClick={() => executeProposal(p.proposalId)}
+                  >
+                    Execute Proposal{" "}
+                    {p.yayVotes > p.nayVotes ? "(YAY)" : "(NAY)"}
+                  </button>
+                </div>
+              ) : (
+                <div className={styles.description}>Proposal Executed</div>
+              )}
+            </div>
+          ))}
+        </div>
+        );
+    }
+  }
+
+  return (
+      <div>
+        <Head>
+          <title>CryptoDevs DAO</title>
+          <meta name='description' content='CryptoDevs DAO' />
+          <link rel='icon' href='/favicon.ico' />
+        </Head>
+
+        <div className={styles.main}>
+          <div>
+            <h1 className={styles.title}>Welcome to Crypto Devs!</h1>
+            <div className={styles.description}>Welcome to the DAO!</div>
+            <div className={styles.description}>
+              Your CryptoDevs NFT Balance: {nftBalance}
+              <br />
+              Treasury Balance: {formatEther(treasuryBalance)} ETH
+              <br />
+              Total Number of Proposals: {numProposals}
+            </div>
+            <div className={styles.flex}>
+              <button
+                className={styles.button}
+                onClick={() => setSelectedTab("Create Proposal")}
+              >
+                Create Proposal
+              </button>
+              <button 
+                className={styles.button}
+                onClick={() => setSelectedTab("View Proposals")}
+              >
+                View Proposals
+              </button>  
+            </div>
+            {renderTabs()}
+          </div>
+        <div>
+            <img className={styles.image} src="/cryptodevs/0.svg" />
+        </div>
+      </div>
+
+      <footer className={styles.footer}>
+        Made with &#10084; by Crypto Devs
+      </footer>
+      </div>
+  );
 }
